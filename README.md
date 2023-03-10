@@ -180,3 +180,16 @@ Contact
 * [Discussion group](https://groups.google.com/forum/#!forum/fadecandy)
 * Micah Elizabeth Scott <<micah@scanlime.org>>
 
+Advantech Innocore
+------------------
+
+To compile the Fadecandy server on Windows, do the following.
+* Use this branch!
+* Ensure MinGW is installed and added to PATH (default C:\MinGW\bin):
+  * Download and run mingw-get-setup.exe
+  * Choose the mingw32-base-bin and mingw32-gcc-g++-bin Packages
+* Ensure Python 2.7 is installed and added to PATH (default C:\Python27)
+* From a suitable command prompt in the fadecandy repository root:
+  * mingw32-make submodules
+  * mingw32-make clean
+  * mingw32-make CC=gcc

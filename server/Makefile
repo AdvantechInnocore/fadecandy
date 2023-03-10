@@ -21,7 +21,18 @@ CPPFLAGS += -Wno-strict-aliasing
 ###########################################################################
 # System Support
 
-UNAME := $(shell uname)
+SYS := $(shell $(CXX) -dumpmachine)
+
+ifneq (, $(findstring linux, $(SYS)))
+UNAME := Linux
+endif
+ifneq (, $(findstring mingw, $(SYS)))
+UNAME := MINGW32
+endif
+ifneq (, $(findstring darwin, $(SYS)))
+UNAME := Darwin
+endif
+
 MINGW := $(findstring MINGW32, $(UNAME))
 LIBS += -lstdc++ -lm
 VERSION := $(shell git describe --match "fcserver-*")
