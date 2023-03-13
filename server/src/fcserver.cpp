@@ -21,6 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "aidevice.h"
 #include "fcserver.h"
 #include "usbdevice.h"
 #include "fcdevice.h"
@@ -147,6 +148,9 @@ void FCServer::usbDeviceArrived(libusb_device *device)
 
     if (FCDevice::probe(device)) {
         dev = new FCDevice(device, mVerbose);
+
+	} else if (AIDevice::probe(device)) {
+		dev = new AIDevice(device, mVerbose);
 
     } else if (EnttecDMXDevice::probe(device)) {
         dev = new EnttecDMXDevice(device, mVerbose);

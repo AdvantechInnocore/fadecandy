@@ -43,6 +43,10 @@ const char *kDefaultConfig =
     "            {\n"
     "                \"type\": \"fadecandy\",\n"
     "                \"map\": [[ 0, 0, 0, 512 ]]\n"
+    "            },\n"
+    "            {\n"
+    "                \"type\": \"Advantech Innocore LED Controller\",\n"
+    "                \"map\": [[ 0, 0, 0, 4096 ]]\n"
     "            }\n"
     "        ]\n"
     "    }\n";

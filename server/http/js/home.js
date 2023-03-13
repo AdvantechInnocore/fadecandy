@@ -78,6 +78,8 @@ jQuery(function ($) {
         // Other initialization is device-type-specific
         if (json.type == "fadecandy") {
             this.initTypeFadecandy();
+		} else if (json.type == "Advantech Innocore LED Controller") {
+			this.initTypeAdvantechInnocoreLEDController();
         } else {
             this.initTypeOther();
         }
@@ -308,6 +310,14 @@ jQuery(function ($) {
             this.view.find(".action-full").click(function (evt) {
                 device.fadeInSingleFrame( device.singleColorFrame(255, 255, 255) );
             });
+        },
+
+        initTypeAdvantechInnocoreLEDController: function() {
+            this.view.find(".list-group-item-heading")
+                .text("Advantech Innocore LED Controller")
+                .after('<p>Properties:</p>', '<pre></pre>');
+
+            this.view.find("pre").html(Utils.sensibleJsonToHtml(this.json));
         },
 
         initTypeOther: function() {
