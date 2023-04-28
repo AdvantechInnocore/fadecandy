@@ -183,13 +183,18 @@ Contact
 Advantech Innocore
 ------------------
 
-To compile the Fadecandy server on Windows, do the following.
+To compile the Fadecandy server on Windows, do the following:
 * Use this branch!
 * Ensure MinGW is installed and added to PATH (default C:\MinGW\bin):
   * Download and run mingw-get-setup.exe
   * Choose the mingw32-base-bin and mingw32-gcc-g++-bin Packages
 * Ensure Python 2.7 is installed and added to PATH (default C:\Python27)
-* From a suitable command prompt in the fadecandy repository root:
+* From a suitable command prompt in the server folder:  (GitBash works for me)
   * mingw32-make submodules
   * mingw32-make clean
   * mingw32-make CC=gcc
+
+  To compile the CPP demos on Windows, do the following:
+* Use this branch!
+* From a suitable command prompt in the examples/cpp folder:  (note, for me, a Cygwin terminal is the only one that is working!)
+  * make

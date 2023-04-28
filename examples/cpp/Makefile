@@ -7,11 +7,11 @@ CFLAGS = -O3 -ffast-math -fno-rtti
 LFLAGS = -lm -lstdc++ -lpthread
 
 # Debugging
-CFLAGS += -g -Wall
+CFLAGS += -g -Wall -D__CMATH__ -fpermissive
 LFLAGS += -g
 
 # Annoying warnings on by default on Mac OS
-CFLAGS += -Wno-tautological-constant-out-of-range-compare -Wno-gnu-static-float-init
+CXXFLAGS += -Wno-class-memaccess -Wno-maybe-uninitialized
 
 
 all: $(PROGRAMS)
