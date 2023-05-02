@@ -52,7 +52,7 @@ ifneq ("$(MINGW)", "")
 
 	# Static build makes it portable but big, UPX packer decreases size a lot.
 	LDFLAGS += -static
-	LIBPATHS += -L../../VibranceAPI/windows/build-1.0.2_Michael.Waites-1.0_win10/RELEASE-win10_i686
+	LIBPATHS += -L../../VibranceAPI/windows/build-1.4.0_Michael.Waites-1.4_win10/RELEASE-win10_i686
 	LIBS += -laivca
 	PACK_CMD := upx\upx391w.exe $(TARGET)
 endif

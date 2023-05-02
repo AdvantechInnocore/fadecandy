@@ -64,7 +64,49 @@ void AIDevice::loadConfiguration(const Value &config)
 	
 void AIDevice::writeMessage(const OPC::Message &msg)
 {
-	std::cout << "MICK: implement writeMessage()\n";
+	switch (msg.command)
+	{
+		case OPC::SetPixelColors:
+		{
+		    uint32_t msgPixelCount = msg.length() / 3;
+//			std::cout << "Set pixel colours command: " << msgPixelCount << " LEDs.\n";
+
+			unsigned char* data = const_cast<unsigned char*>(msg.data);
+			int32_t channel = 0;
+			int32_t layer = 1;
+			while (msgPixelCount > 0)
+			{
+				int32_t chunk_size = (msgPixelCount >= 256 ? 256 : msgPixelCount);
+				vca_send_raw_led_data(channel, layer, data, chunk_size);
+
+				data += (chunk_size * 3);
+				channel++;
+				msgPixelCount -= chunk_size;
+			}
+			vca_refresh_led_strips();
+			
+		} break;
+
+		case OPC::SystemExclusive:
+		{
+			if (msg.length() < 4)
+			{
+				std::cout << "SysEx message too short!\n";
+				return;
+			}
+
+			unsigned id = (unsigned(msg.data[0]) << 24) |
+				(unsigned(msg.data[1]) << 16) |
+				(unsigned(msg.data[2]) << 8)  |
+				unsigned(msg.data[3]);
+			std::cout << "SysEx command: " << id << "\n";
+		} break;
+
+		default:
+		{
+			std::cout << "Unhandled OPC command: " << msg.command << "\n";
+		} break;
+	}
 }
 	
 std::string AIDevice::getName()
