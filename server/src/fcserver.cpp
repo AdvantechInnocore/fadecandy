@@ -149,7 +149,7 @@ void FCServer::usbDeviceArrived(libusb_device *device)
     if (FCDevice::probe(device)) {
         dev = new FCDevice(device, mVerbose);
 
-	} else if (AIDevice::probe(device)) {
+	} else if (AIDevice::probe(device, mVerbose)) {
 		dev = new AIDevice(device, mVerbose);
 
     } else if (EnttecDMXDevice::probe(device)) {
