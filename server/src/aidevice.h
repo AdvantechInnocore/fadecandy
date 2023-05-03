@@ -16,13 +16,15 @@ public:
 	static bool probe(libusb_device *device, bool verbose);
 
 	virtual int open() override;
+	virtual bool probeAfterOpening() override;
+	virtual bool matchConfiguration(const Value &config) override;
 	virtual void loadConfiguration(const Value &config) override;
 	virtual void writeMessage(const OPC::Message &msg) override;
-//	virtual void writeMessage(Document &msg);
-//	virtual void writeColorCorrection(const Value &color);
-	virtual std::string getName() override;
+	virtual void writeMessage(Document &msg) override;
+	virtual void writeColorCorrection(const Value &color) override;
 	virtual void flush() override;
-//	virtual void describe(rapidjson::Value &object, Allocator &alloc);
+	virtual void describe(rapidjson::Value &object, Allocator &alloc) override;
+	virtual std::string getName() override;
 
 private:
 	static const uint32_t NUM_CHANNELS = 8;

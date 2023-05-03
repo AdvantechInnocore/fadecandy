@@ -136,6 +136,20 @@ int AIDevice::open()
 	return 0; // Already open
 }
 
+bool AIDevice::probeAfterOpening()
+{
+	if (mVerbose)
+		std::clog << "probeAfterOpening() called.\n";
+	return USBDevice::probeAfterOpening();
+}
+	
+bool AIDevice::matchConfiguration(const Value &config)
+{
+	if (mVerbose)
+		std::clog << "matchConfiguration() called.\n";
+	return USBDevice::matchConfiguration(config);
+}
+
 void AIDevice::loadConfiguration(const Value &config)
 {
 	if (mVerbose)
@@ -188,9 +202,18 @@ void AIDevice::writeMessage(const OPC::Message &msg)
 	}
 }
 
-std::string AIDevice::getName()
+void AIDevice::writeMessage(Document &msg)
 {
-	return mName;
+	if (mVerbose)
+		std::clog << "writeMessage(Document) called.\n";
+	USBDevice::writeMessage(msg);
+}
+	
+void AIDevice::writeColorCorrection(const Value &color)
+{
+	if (mVerbose)
+		std::clog << "writeColorCorrection() called.\n";
+	USBDevice::writeColorCorrection(color);
 }
 
 void AIDevice::flush()
@@ -200,6 +223,18 @@ void AIDevice::flush()
 	{
 		writeFramebuffer();
 	}
+}
+
+void AIDevice::describe(rapidjson::Value &object, Allocator &alloc)
+{
+	if (mVerbose)
+		std::clog << "describe() called.\n";
+	USBDevice::describe(object, alloc);
+}
+	
+std::string AIDevice::getName()
+{
+	return mName;
 }
 
 void AIDevice::transferThreadLoop(void *arg)
