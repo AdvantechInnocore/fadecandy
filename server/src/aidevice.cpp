@@ -75,13 +75,19 @@ AIDevice::AIDevice(libusb_device *device, bool verbose) : USBDevice(device, "Adv
 
 AIDevice::~AIDevice()
 {
+	if (mVerbose)
+		std::clog << "AIDevice destructor called.\n";
 	vca_disconnect();
 
 	if (mTransferThread)
 	{
+		if (mVerbose)
+			std::clog << "Killing data transfer thread.\n";
 		mKeepThreadRunning = false;
 		mTransferThread->join();
 		delete mTransferThread;
+		if (mVerbose)
+			std::clog << "Thread killed.\n";
 	}
 }
 
@@ -91,6 +97,8 @@ bool AIDevice::probe(libusb_device *device, bool verbose)
 
 	if (libusb_get_device_descriptor(device, &dd) < 0)
 	{
+		if (verbose)
+			std::clog << "Failed to get libusb device descriptor.\n";
 		return false; // Can't access descriptor?
 	}
 
@@ -102,6 +110,8 @@ bool AIDevice::probe(libusb_device *device, bool verbose)
 	char *connected_port = nullptr;
 	if (vca_is_connected(&connected_port))
 	{
+		if (verbose)
+			std::clog << "Already connected to an LED Controller.\n";
 		return false; // Already connected, only one connection is currently supported
 	}
 
@@ -109,10 +119,12 @@ bool AIDevice::probe(libusb_device *device, bool verbose)
 	for (int p = 0; p < 256; ++p)
 	{
 		sprintf(com_port, "COM%d", p);
+		if (verbose)
+			std::clog << "Attempting to connect to COM" << p << " to see if there is an LED Controller.\n";
 		int ret = vca_connect(com_port);
 		if (verbose)
 		{
-			std::clog << "vca_connect result for COM" << p << ": " << ret;
+			std::clog << "vca_connect result: " << ret;
 			if (ret == VCA_SUCCESS)
 				std::clog << " - success.\n";
 			else
@@ -125,6 +137,8 @@ bool AIDevice::probe(libusb_device *device, bool verbose)
 		}
 	}
 
+	if (verbose)
+		std::clog << "No LED Controller found on the COM ports.\n";
 	return false;
 }
 
@@ -153,9 +167,7 @@ bool AIDevice::matchConfiguration(const Value &config)
 void AIDevice::loadConfiguration(const Value &config)
 {
 	if (mVerbose)
-	{
-		std::clog << "MICK: implement loadConfiguration()\n";
-	}
+		std::clog << "loadConfiguration() called.\n";
 }
 
 void AIDevice::writeMessage(const OPC::Message &msg)
