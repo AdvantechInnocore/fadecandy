@@ -40,6 +40,7 @@ private:
 	unsigned char mLedData[FRAMEBUFFER_SIZE];
 	unsigned char mBackBuffer[FRAMEBUFFER_SIZE];
 	
+	std::string mName;
 	tthread::thread* mTransferThread;
     bool mFrameWaitingForSubmit;
 	volatile bool mNewFrameReadyToSend;

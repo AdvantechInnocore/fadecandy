@@ -6,6 +6,63 @@
 
 #include <vca_api.h>
 
+namespace
+{
+	std::string formulateName(bool verbose)
+	{
+		static const size_t BUFF_SIZE = 256;
+		char name_buffer[BUFF_SIZE] = {0};
+		size_t board_name_length = 31;
+		unsigned char board_name[board_name_length + 1] = {0};
+		unsigned int unique_id[3];
+		unsigned int id_len = sizeof(unique_id);
+		int param_no = 0;
+		char* ver_str = NULL;
+		
+		int ret = vca_get_firmware_version(NULL, NULL, &ver_str);
+		if (VCA_SUCCESS != ret)
+		{
+			if (verbose)
+				std::clog << "Failed to get LED Controller firmware string (" << ret << ").\n";
+			goto done;
+		}
+
+		param_no = vca_param_name_to_code("board");
+		if (param_no <= 0)
+		{
+			if (verbose)
+				std::clog << "Failed to get board name param number (" << param_no << ").\n";
+			goto done;
+		}
+		ret = vca_get_parameter(NULL, param_no, 0, board_name, &board_name_length);
+		if (VCA_SUCCESS != ret)
+		{
+			if (verbose)
+				std::clog << "Failed to get board name (" << ret << ").\n";
+			goto done;
+		}
+
+		param_no = vca_param_name_to_code("uniqid");
+		if (param_no <= 0)
+		{
+			if (verbose)
+				std::clog << "Failed to get unique id param number (" << param_no << ").\n";
+			goto done;
+		}
+		ret = vca_get_parameter(NULL, param_no, 0, reinterpret_cast<unsigned char*>(unique_id), &id_len);
+		if (VCA_SUCCESS != ret)
+		{
+			if (verbose)
+				std::clog << "Failed to get board name (" << ret << ").\n";
+			goto done;
+		}
+
+		sprintf(name_buffer, "Advantech LED Controller %s (ID: %08x%08x%08x FW ver:%s)", board_name, unique_id[0], unique_id[1], unique_id[2], ver_str);
+done:
+		return name_buffer;
+	}
+}
+
 
 AIDevice::AIDevice(libusb_device *device, bool verbose) : USBDevice(device, "Advantech Innocore LED Controller", verbose),
 														  mTransferThread(nullptr),
@@ -75,6 +132,7 @@ int AIDevice::open()
 {
 	mKeepThreadRunning = true;
 	mTransferThread = new tthread::thread(transferThreadLoop, this);
+	mName = formulateName(mVerbose);
 	return 0; // Already open
 }
 
@@ -132,11 +190,7 @@ void AIDevice::writeMessage(const OPC::Message &msg)
 
 std::string AIDevice::getName()
 {
-	if (mVerbose)
-	{
-		std::clog << "MICK: implement getName()\n";
-	}
-	return "Bob";
+	return mName;
 }
 
 void AIDevice::flush()
