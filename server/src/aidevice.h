@@ -13,7 +13,7 @@ public:
 	AIDevice(libusb_device *device, bool verbose);
 	virtual ~AIDevice();
 
-	static bool probe(libusb_device *device, bool verbose);
+	static bool probe(libusb_device *device, const Value& devices_cfg, bool verbose);
 
 	virtual int open() override;
 	virtual bool probeAfterOpening() override;
@@ -43,6 +43,7 @@ private:
 	unsigned char mBackBuffer[FRAMEBUFFER_SIZE];
 	
 	std::string mName;
+	std::string mComPort;
 	tthread::thread* mTransferThread;
     bool mFrameWaitingForSubmit;
 	volatile bool mNewFrameReadyToSend;

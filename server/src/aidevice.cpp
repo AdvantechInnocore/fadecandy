@@ -8,6 +8,8 @@
 
 namespace
 {
+	std::string last_com_port;
+
 	std::string formulateName(bool verbose)
 	{
 		static const size_t BUFF_SIZE = 256;
@@ -61,6 +63,75 @@ namespace
 done:
 		return name_buffer;
 	}
+
+	bool tryConnectToPort(const char* com_port, bool verbose)
+	{
+		if (verbose)
+			std::clog << "Attempting to connect to " << com_port << " to see if there is an LED Controller.\n";
+		int ret = vca_connect(com_port);
+		if (verbose)
+		{
+			std::clog << "vca_connect result: " << ret;
+			if (ret == VCA_SUCCESS)
+				std::clog << " - success.\n";
+			else
+				std::clog << " - " << vca_last_os_error_string();
+		}
+
+		if (ret == VCA_SUCCESS)
+		{
+			last_com_port = com_port;
+			return true;
+		}
+		return false;
+	}
+
+	bool tryConnectOnPortsInConfig(const USBDevice::Value& config, bool verbose)
+	{
+		const USBDevice::Value& ports = config["ailedc_comports"];
+		if (ports.IsNull())
+		{
+			if (verbose)
+				std::clog << "No 'ailedc_comports' property found in config file.\n";
+			return false;
+		}
+		if (!ports.IsArray())
+		{
+			std::clog << "Expected 'ailedc_comports' to be an array.\n";
+			return false;
+		}
+
+		for (int i = 0; i < ports.Size(); ++i)
+		{
+			const USBDevice::Value& port = ports[i];
+			if (!port.IsString())
+			{
+				std::clog << "Expected values in 'ailedc_comports' to be strings.\n";
+				return false;
+			}
+
+			if (tryConnectToPort(port.GetString(), verbose))
+				return true;
+		}
+
+		return false;
+	}
+
+	void tryConnectOnAllports(bool verbose)
+	{
+		char com_port[32];
+		if (verbose)
+			std::clog << "Scanning all COM ports to find an LED Controller (this may be slow, better to add one to a config file).\n";
+		for (int p = 1; p < 256; ++p)
+		{
+			sprintf(com_port, "COM%d", p);
+			if (tryConnectToPort(com_port, verbose))
+				return;
+		}
+
+		if (verbose)
+			std::clog << "No LED Controller found on the COM ports.\n";
+	}
 }
 
 
@@ -91,7 +162,7 @@ AIDevice::~AIDevice()
 	}
 }
 
-bool AIDevice::probe(libusb_device *device, bool verbose)
+bool AIDevice::probe(libusb_device *device, const Value& config, bool verbose)
 {
 	libusb_device_descriptor dd;
 
@@ -115,35 +186,19 @@ bool AIDevice::probe(libusb_device *device, bool verbose)
 		return false; // Already connected, only one connection is currently supported
 	}
 
-	char com_port[32];
-	for (int p = 0; p < 256; ++p)
-	{
-		sprintf(com_port, "COM%d", p);
-		if (verbose)
-			std::clog << "Attempting to connect to COM" << p << " to see if there is an LED Controller.\n";
-		int ret = vca_connect(com_port);
-		if (verbose)
-		{
-			std::clog << "vca_connect result: " << ret;
-			if (ret == VCA_SUCCESS)
-				std::clog << " - success.\n";
-			else
-				std::clog << " - " << vca_last_os_error_string();
-		}
-
-		if (ret == VCA_SUCCESS)
-		{
-			return true;
-		}
-	}
-
-	if (verbose)
-		std::clog << "No LED Controller found on the COM ports.\n";
-	return false;
+	if (!tryConnectOnPortsInConfig(config, verbose))
+		tryConnectOnAllports(verbose);
+	
+	if (last_com_port.length() == 0)
+		return false;	// last_com_port will be configured if connection was successful
+	
+	return true;
 }
 
 int AIDevice::open()
 {
+	mComPort = last_com_port;
+	last_com_port = "";
 	mKeepThreadRunning = true;
 	mTransferThread = new tthread::thread(transferThreadLoop, this);
 	mName = formulateName(mVerbose);
