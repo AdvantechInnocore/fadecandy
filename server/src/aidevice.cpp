@@ -148,7 +148,6 @@ AIDevice::~AIDevice()
 {
 	if (mVerbose)
 		std::clog << "AIDevice destructor called.\n";
-	vca_disconnect();
 
 	if (mTransferThread)
 	{
@@ -160,6 +159,8 @@ AIDevice::~AIDevice()
 		if (mVerbose)
 			std::clog << "Thread killed.\n";
 	}
+
+	vca_disconnect();
 }
 
 bool AIDevice::probe(libusb_device *device, const Value& config, bool verbose)
