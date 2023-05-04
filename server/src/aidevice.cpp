@@ -6,11 +6,17 @@
 
 #include <vca_api.h>
 
+#define IGL_GET_VERSION_MAJOR(ver)	 (((ver) & 0xf0000000) >> 28)
+#define IGL_GET_VERSION_MINOR(ver)	 (((ver) & 0x0ff00000) >> 20)
+#define IGL_GET_VERSION_MICRO(ver)	 (((ver) & 0x000ff000) >> 12)
+#define IGL_GET_VERSION_BUILD(ver)	 (((ver) & 0x00000fff))
+
 namespace
 {
 	std::string last_com_port;
+	int last_version_no = 0;
 
-	std::string formulateName(bool verbose)
+	std::string formulateName(const std::string& com_port, bool verbose)
 	{
 		static const size_t BUFF_SIZE = 256;
 		char name_buffer[BUFF_SIZE] = {0};
@@ -19,15 +25,7 @@ namespace
 		unsigned int unique_id[3];
 		unsigned int id_len = sizeof(unique_id);
 		int param_no = 0;
-		char* ver_str = NULL;
-		
-		int ret = vca_get_firmware_version(NULL, NULL, &ver_str);
-		if (VCA_SUCCESS != ret)
-		{
-			if (verbose)
-				std::clog << "Failed to get LED Controller firmware string (" << ret << ").\n";
-			goto done;
-		}
+		int ret = -1;
 
 		param_no = vca_param_name_to_code("board");
 		if (param_no <= 0)
@@ -59,7 +57,12 @@ namespace
 			goto done;
 		}
 
-		sprintf(name_buffer, "Advantech LED Controller %s (ID: %08x%08x%08x FW ver:%s)", board_name, unique_id[0], unique_id[1], unique_id[2], ver_str);
+		sprintf(name_buffer, "Advantech LED Controller %s on %s (ID: %08x%08x%08x FW v%d.%d.%d.%d)", board_name, com_port.c_str(), unique_id[0], unique_id[1], unique_id[2],
+			IGL_GET_VERSION_MAJOR(last_version_no),
+			IGL_GET_VERSION_MINOR(last_version_no),
+			IGL_GET_VERSION_MICRO(last_version_no),
+			IGL_GET_VERSION_BUILD(last_version_no));
+
 done:
 		return name_buffer;
 	}
@@ -80,6 +83,24 @@ done:
 
 		if (ret == VCA_SUCCESS)
 		{
+			ret = vca_get_firmware_version(NULL, &last_version_no, NULL);
+			if (VCA_SUCCESS != ret)
+			{
+				if (verbose)
+					std::clog << "Failed to get LED Controller firmware string (" << ret << ").\n";
+				vca_disconnect();
+				return false;
+			}
+
+			if (IGL_GET_VERSION_MAJOR(last_version_no) < 1 || IGL_GET_VERSION_MINOR(last_version_no) < 4)
+			{
+				std::clog << "LED Controller firmware (v"
+					<< IGL_GET_VERSION_MAJOR(last_version_no) << "." << IGL_GET_VERSION_MINOR(last_version_no) << "." << IGL_GET_VERSION_MICRO(last_version_no) << "." << IGL_GET_VERSION_BUILD(last_version_no)
+					<< ") is too old to work with Fadecandy.  Expected v1.4 or above.\n";
+				vca_disconnect();
+				return false;
+			}
+
 			last_com_port = com_port;
 			return true;
 		}
@@ -202,7 +223,7 @@ int AIDevice::open()
 	last_com_port = "";
 	mKeepThreadRunning = true;
 	mTransferThread = new tthread::thread(transferThreadLoop, this);
-	mName = formulateName(mVerbose);
+	mName = formulateName(mComPort, mVerbose);
 	return 0; // Already open
 }
 
