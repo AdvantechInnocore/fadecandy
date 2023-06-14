@@ -27,19 +27,14 @@ public:
 	virtual std::string getName() override;
 
 private:
-	static const uint32_t NUM_CHANNELS = 8;
-	static const uint32_t LEDS_PER_CHANNEL = 64;
-	static const uint32_t COLOURS_PER_LED = 3;
-	static const uint32_t CHANNEL_DATA_SIZE = (LEDS_PER_CHANNEL * COLOURS_PER_LED);
-	static const uint32_t FRAMEBUFFER_SIZE = (NUM_CHANNELS * CHANNEL_DATA_SIZE);
-
 	static void transferThreadLoop(void* arg);
 
 	void opcSetPixelColors(const OPC::Message &msg);
 	void writeFramebuffer();
 
-	unsigned char mLedData[FRAMEBUFFER_SIZE];
-	unsigned char mBackBuffer[FRAMEBUFFER_SIZE];
+	uint32_t mLedDataSize = 0;
+	uint8_t* mLedData = nullptr;
+	uint8_t* mBackBuffer = nullptr;
 	
 	std::string mName;
 	std::string mComPort;

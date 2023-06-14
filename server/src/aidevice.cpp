@@ -11,6 +11,8 @@
 #define IGL_GET_VERSION_MICRO(ver)	 (((ver) & 0x000ff000) >> 12)
 #define IGL_GET_VERSION_BUILD(ver)	 (((ver) & 0x00000fff))
 
+#define COLOURS_PER_LED 3
+
 namespace
 {
 	std::string last_com_port;
@@ -204,6 +206,9 @@ AIDevice::~AIDevice()
 			std::clog << "Thread killed.\n";
 	}
 
+	delete []mBackBuffer;
+	delete []mLedData;
+
 	vca_disconnect();
 }
 
@@ -324,6 +329,7 @@ void AIDevice::loadConfiguration(const Value &config)
 				++output_channel;
 				firstOut = 0;
 				firstOPC += channel_count;
+				total_leds += channel_count;
 
 				if (count != 0 && output_channel >= VCA_NUM_LED_CHANNELS)
 				{
@@ -338,6 +344,20 @@ void AIDevice::loadConfiguration(const Value &config)
 	if (VCA_SUCCESS != ret)
 	{
 		std::clog << "Failed to set LED mapping on the LED Controller (" << ret << ").  It will not be possible to set any LED colours.\n";
+		return;
+	}
+
+	mLedDataSize = total_leds * COLOURS_PER_LED;
+	mBackBuffer = new uint8_t[mLedDataSize];
+	mLedData = new uint8_t[mLedDataSize];
+	if (!mBackBuffer || !mLedData)
+	{
+		delete []mBackBuffer;
+		delete []mLedData;
+		mBackBuffer = nullptr;
+		mLedData = nullptr;
+		mLedDataSize = 0;
+		std::clog << "Failed to initialise LED mapping - failed to allocate framebuffers.  It will not be possible to set any LED colours.\n";
 		return;
 	}
 
@@ -398,12 +418,15 @@ void AIDevice::writeMessage(Document &msg)
 	
 void AIDevice::writeColorCorrection(const Value &color)
 {
-	if (mVerbose)
-		std::clog << "Setting simple colour correction on the LED Controller.\n";
-	int ret = vca_enable_simple_colour_correction();
-	if (mVerbose && VCA_SUCCESS != ret)
+	if (!color.IsNull())
 	{
-		std::clog << "Failed to set simple colour correction on the LED Controller (" << ret << ").\n";
+		if (mVerbose)
+			std::clog << "Setting simple colour correction on the LED Controller.\n";
+		int ret = vca_enable_simple_colour_correction();
+		if (mVerbose && VCA_SUCCESS != ret)
+		{
+			std::clog << "Failed to set simple colour correction on the LED Controller (" << ret << ").\n";
+		}
 	}
 }
 
@@ -440,7 +463,7 @@ void AIDevice::transferThreadLoop(void *arg)
 		}
 		self->mFrameTransferInProgress = true;
 		self->mNewFrameReadyToSend = false;
-		vca_set_mapped_led_colours(self->mLedData, sizeof(self->mBackBuffer));
+		vca_set_mapped_led_colours(self->mLedData, self->mLedDataSize);
 		vca_start_led_data_transmission();
 		self->mFrameTransferInProgress = false;
 	}
@@ -450,11 +473,11 @@ void AIDevice::transferThreadLoop(void *arg)
 // For now, mapping is ignored, but will be implemented in the future
 void AIDevice::opcSetPixelColors(const OPC::Message &msg)
 {
-	if (msg.length() > FRAMEBUFFER_SIZE)
+	if (msg.length() > mLedDataSize)
 	{
 		if (mVerbose)
 		{
-			std::clog << "Framebuffer size (" << FRAMEBUFFER_SIZE << ") too small for incoming message size: " << msg.length() << "\n";
+			std::clog << "Framebuffer size (" << mLedDataSize << ") too small for incoming message size: " << msg.length() << "\n";
 		}
 		return;
 	}
@@ -485,6 +508,6 @@ void AIDevice::writeFramebuffer()
 		return;
 	}
 
-	memcpy(mLedData, mBackBuffer, FRAMEBUFFER_SIZE);
+	memcpy(mLedData, mBackBuffer, mLedDataSize);
 	mNewFrameReadyToSend = true;
 }
