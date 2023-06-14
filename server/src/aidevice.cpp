@@ -101,6 +101,30 @@ done:
 				return false;
 			}
 
+			if (VCA_SUCCESS != (ret = vca_controller_set_running(VCA_CONTROLLER_ARMED)))
+			{
+				if (verbose)
+					std::clog << "Failed to stop the LED Controller running patterns (" << ret << ").\n";
+				vca_disconnect();
+				return false;
+			}
+
+			if (VCA_SUCCESS != (ret = vca_reset_all_layers()))
+			{
+				if (verbose)
+					std::clog << "Failed to get reset all LED Controller layers (" << ret << ").\n";
+				vca_disconnect();
+				return false;
+			}
+
+			if (VCA_SUCCESS != (ret = vca_set_all_channels_brightness(31)))
+			{
+				if (verbose)
+					std::clog << "Failed to get set all LED Controller channel brightness settings (" << ret << ").\n";
+				vca_disconnect();
+				return false;
+			}
+
 			last_com_port = com_port;
 			return true;
 		}
@@ -303,8 +327,12 @@ void AIDevice::writeMessage(Document &msg)
 void AIDevice::writeColorCorrection(const Value &color)
 {
 	if (mVerbose)
-		std::clog << "writeColorCorrection() called.\n";
-	USBDevice::writeColorCorrection(color);
+		std::clog << "Setting simple colour correction on the LED Controller.\n";
+	int ret = vca_enable_simple_colour_correction();
+	if (mVerbose && VCA_SUCCESS != ret)
+	{
+		std::clog << "Failed to set simple colour correction on the LED Controller (" << ret << ").\n";
+	}
 }
 
 void AIDevice::flush()
