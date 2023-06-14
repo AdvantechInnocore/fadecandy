@@ -212,7 +212,7 @@ bool AIDevice::probe(libusb_device *device, const Value& config, bool verbose)
 	
 	if (last_com_port.length() == 0)
 		return false;	// last_com_port will be configured if connection was successful
-	
+
 	return true;
 }
 
@@ -228,8 +228,6 @@ int AIDevice::open()
 
 bool AIDevice::probeAfterOpening()
 {
-	if (mVerbose)
-		std::clog << "probeAfterOpening() called.\n";
 	return USBDevice::probeAfterOpening();
 }
 	
@@ -242,6 +240,11 @@ bool AIDevice::matchConfiguration(const Value &config)
 
 void AIDevice::loadConfiguration(const Value &config)
 {
+    /*
+     *	Channel mapping stuff:
+     *   [ OPC Channel, First OPC Pixel, First output pixel, Pixel count ]
+     */
+
 	if (mVerbose)
 		std::clog << "loadConfiguration() called.\n";
 }
@@ -373,6 +376,14 @@ void AIDevice::opcMapPixelColors(const OPC::Message &msg /*, const Value &inst*/
 		if (mVerbose)
 		{
 			std::clog << "Framebuffer size (" << FRAMEBUFFER_SIZE << ") too small for incoming message size: " << msg.length() << "\n";
+		}
+		return;
+	}
+	if (msg.channel != 0)
+	{
+		if (mVerbose)
+		{
+			std::clog << "Only SetPixelColours commands for channel 0 are supported on Advantech Innocore LED Controllers." << "\n";
 		}
 		return;
 	}
