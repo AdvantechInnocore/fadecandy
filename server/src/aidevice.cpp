@@ -450,27 +450,6 @@ void AIDevice::transferThreadLoop(void *arg)
 // For now, mapping is ignored, but will be implemented in the future
 void AIDevice::opcSetPixelColors(const OPC::Message &msg)
 {
-	/*
-	 * Parse through our device's mapping, and store any relevant portions of 'msg'
-	 * in the framebuffer.
-	 */
-
-	//	if (!mConfigMap)
-	//	{
-	//		// No mapping defined yet. This device is inactive.
-	//		return;
-	//	}
-
-	//	const Value &map = *mConfigMap;
-	//	for (unsigned i = 0, e = map.Size(); i != e; i++)
-	{
-		opcMapPixelColors(msg /*, map[i]*/);
-	}
-}
-
-// Performs the framebuffer update based on the mapping (mapping ignored for now)
-void AIDevice::opcMapPixelColors(const OPC::Message &msg /*, const Value &inst*/)
-{
 	if (msg.length() > FRAMEBUFFER_SIZE)
 	{
 		if (mVerbose)

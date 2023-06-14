@@ -36,7 +36,6 @@ private:
 	static void transferThreadLoop(void* arg);
 
 	void opcSetPixelColors(const OPC::Message &msg);
-	void opcMapPixelColors(const OPC::Message &msg/*, const Value &inst*/);
 	void writeFramebuffer();
 
 	unsigned char mLedData[FRAMEBUFFER_SIZE];
