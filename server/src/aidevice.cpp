@@ -155,7 +155,6 @@ done:
 	}
 }
 
-
 AIDevice::AIDevice(libusb_device *device, bool verbose) : USBDevice(device, "Advantech Innocore LED Controller", verbose),
 														  mTransferThread(nullptr),
 														  mFrameWaitingForSubmit(false),
@@ -338,13 +337,8 @@ void AIDevice::transferThreadLoop(void *arg)
 		}
 		self->mFrameTransferInProgress = true;
 		self->mNewFrameReadyToSend = false;
-		unsigned char* led_data = self->mLedData;
-		for (int channel = 0; channel < NUM_CHANNELS; ++channel)
-		{
-			vca_send_raw_led_data(channel, 1, led_data, LEDS_PER_CHANNEL);
-			led_data += CHANNEL_DATA_SIZE;
-		}
-		vca_refresh_led_strips();
+		vca_set_mapped_led_colours(self->mLedData, sizeof(self->mBackBuffer));
+		vca_start_led_data_transmission();
 		self->mFrameTransferInProgress = false;
 	}
 }
