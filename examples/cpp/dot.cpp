@@ -9,7 +9,7 @@ int main(int argc, char **argv)
     r.setEffect(&e);
 
     // Defaults, overridable with command line options
-    r.setLayout("../layouts/grid32x16.json");
+    r.setLayout("../layouts/grid64x32.json");
 
     return r.main(argc, argv);
 }

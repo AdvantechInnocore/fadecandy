@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 
     // Defaults, overridable with command line options
     r.setMaxFrameRate(100);
-    r.setLayout("../layouts/grid32x16.json");
+    r.setLayout("../layouts/grid64x32.json");
 
     return r.main(argc, argv);
 }

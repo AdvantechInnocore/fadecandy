@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 
     EffectRunner r;
     r.setEffect(&mixer);
-    r.setLayout("../layouts/grid32x16.json");
+    r.setLayout("../layouts/grid64x32.json");
     if (!r.parseArguments(argc, argv)) {
         return 1;
     }
