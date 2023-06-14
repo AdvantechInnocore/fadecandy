@@ -268,9 +268,81 @@ void AIDevice::loadConfiguration(const Value &config)
      *	Channel mapping stuff:
      *   [ OPC Channel, First OPC Pixel, First output pixel, Pixel count ]
      */
+	const USBDevice::Value* config_map = findConfigMap(config);
+	if (!config_map)
+	{
+		if (mVerbose)
+			std::clog << "LED mapping not found in configuration.  It will not be possible to set any LED colours.\n";
+
+		return;
+	}
+
+	const USBDevice::Value& map = *config_map;
+	std::vector<led_mapping_t> mapping;
+	uint32_t total_leds = 0;
+	for (int i = 0, e = map.Size(); i != e; i++)
+	{
+		const Value& inst = map[i];
+		if (inst.IsArray() && inst.Size() == 4)
+		{
+			const Value& vChannel = inst[0u];
+			const Value& vFirstOPC = inst[1];
+			const Value& vFirstOut = inst[2];
+			const Value& vCount = inst[3];
+			if (!vChannel.IsUint() || !vFirstOPC.IsUint() || !vFirstOut.IsUint() || !vCount.IsUint())
+			{
+				std::clog << "LED mapping entry " << i << " has invalid values.  It will not be possible to set any LED colours.\n";
+				return;
+			}
+            uint32_t channel = vChannel.GetUint();
+            uint32_t firstOPC = vFirstOPC.GetUint();
+            uint32_t firstOut = vFirstOut.GetUint();
+            uint32_t count = vCount.GetUint();
+
+			if (channel != 0)
+			{
+				std::clog << "LED mapping entry " << i << " has a channel parameter that is not zero, this is not supported at this time.  It will not be possible to set any LED colours.\n";
+				return;
+			}
+
+			if (firstOut >= VCA_MAX_LEDS_SUPPORTED)
+			{
+				std::clog << "LED mapping entry " << i << " has an output parameter (" << firstOut << ") that exceeds the number of LEDs supported by the LED Controller (" << VCA_MAX_LEDS_SUPPORTED << ").  It will not be possible to set any LED colours.\n";
+				return;
+			}
+
+			uint32_t output_channel = firstOut / VCA_MAX_LEDS_PER_CHANNEL;
+			firstOut %= VCA_MAX_LEDS_PER_CHANNEL;
+			while (count > 0)
+			{
+				uint32_t channel_count = ((firstOut + count) > VCA_MAX_LEDS_PER_CHANNEL ? VCA_MAX_LEDS_PER_CHANNEL - firstOut : count);
+
+				led_mapping_t entry = {(vcaU16)firstOPC, (vcaU16)channel_count, (vcaU8)output_channel, 0, (vcaU8)firstOut, 1};
+				mapping.push_back(entry);
+
+				count -= channel_count;
+				++output_channel;
+				firstOut = 0;
+				firstOPC += channel_count;
+
+				if (count != 0 && output_channel >= VCA_NUM_LED_CHANNELS)
+				{
+					std::clog << "LED mapping entry " << i << " exceeds past the number of supported LED Controller channels (" << VCA_NUM_LED_CHANNELS << ").  It will not be possible to set any LED colours.\n";
+					return;
+				}
+			}
+		}
+	}
+
+	int ret = vca_set_led_mapping(mapping.data(), mapping.size());
+	if (VCA_SUCCESS != ret)
+	{
+		std::clog << "Failed to set LED mapping on the LED Controller (" << ret << ").  It will not be possible to set any LED colours.\n";
+		return;
+	}
 
 	if (mVerbose)
-		std::clog << "loadConfiguration() called.\n";
+		std::clog << "LED mapping applied to the LED Controller.\n";
 }
 
 void AIDevice::writeMessage(const OPC::Message &msg)
