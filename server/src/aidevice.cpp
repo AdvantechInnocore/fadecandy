@@ -103,7 +103,7 @@ done:
 				return false;
 			}
 
-			if (VCA_SUCCESS != (ret = vca_controller_set_running(VCA_CONTROLLER_ARMED)))
+			if (VCA_SUCCESS != (ret = vca_set_pattern_playback_state(VCA_PATTERN_PLAYBACK_PAUSED)))
 			{
 				if (verbose)
 					std::clog << "Failed to stop the LED Controller running patterns (" << ret << ").\n";
@@ -283,7 +283,7 @@ void AIDevice::loadConfiguration(const Value &config)
 	}
 
 	const USBDevice::Value& map = *config_map;
-	std::vector<led_mapping_t> mapping;
+	std::vector<vca_led_mapping_t> mapping;
 	uint32_t total_leds = 0;
 	for (int i = 0, e = map.Size(); i != e; i++)
 	{
@@ -322,7 +322,7 @@ void AIDevice::loadConfiguration(const Value &config)
 			{
 				uint32_t channel_count = ((firstOut + count) > VCA_MAX_LEDS_PER_CHANNEL ? VCA_MAX_LEDS_PER_CHANNEL - firstOut : count);
 
-				led_mapping_t entry = {(vcaU16)firstOPC, (vcaU16)channel_count, (vcaU8)output_channel, 0, (vcaU8)firstOut, 1};
+				vca_led_mapping_t entry = {(vcaU16)firstOPC, (vcaU16)channel_count, (vcaU8)output_channel, 0, (vcaU8)firstOut, 1};
 				mapping.push_back(entry);
 
 				count -= channel_count;
