@@ -328,9 +328,6 @@ AIDevice::AIDevice(libusb_device *device, bool verbose) : USBDevice(device, "Adv
 
 AIDevice::~AIDevice()
 {
-	if (mVerbose)
-		std::clog << "AIDevice destructor called.\n";
-
 	if (mTransferThread)
 	{
 		if (mVerbose)
@@ -398,8 +395,6 @@ bool AIDevice::probeAfterOpening()
 	
 bool AIDevice::matchConfiguration(const Value &config)
 {
-	if (mVerbose)
-		std::clog << "matchConfiguration() called.\n";
 	return USBDevice::matchConfiguration(config);
 }
 
@@ -583,8 +578,6 @@ void AIDevice::flush()
 
 void AIDevice::describe(rapidjson::Value &object, Allocator &alloc)
 {
-	if (mVerbose)
-		std::clog << "describe() called.\n";
 	USBDevice::describe(object, alloc);
 }
 	
