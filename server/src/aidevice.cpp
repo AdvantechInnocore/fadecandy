@@ -122,7 +122,7 @@ done:
 			if (VCA_SUCCESS != (ret = vca_set_all_channels_brightness(31)))
 			{
 				if (verbose)
-					std::clog << "Failed to get set all LED Controller channel brightness settings (" << ret << ").\n";
+					std::clog << "Failed to set all LED Controller channel brightness settings (" << ret << ").\n";
 				vca_disconnect();
 				return false;
 			}
@@ -178,6 +178,142 @@ done:
 
 		if (verbose)
 			std::clog << "No LED Controller found on the COM ports.\n";
+	}
+
+	bool tryGetUnsignedValue(const USBDevice::Value& protocol_config, const char* param_name, bool verbose, unsigned int& out_val)
+	{
+		const USBDevice::Value& val = protocol_config[param_name];
+		if (val.IsNull())
+		{
+			return false;
+		}
+
+		if (!val.IsUint())
+		{
+			if (verbose)
+				std::clog << "Expected 'protocol." << param_name << "' property in config file to be an unsigned integer.\n";
+			return false;
+		}
+
+		out_val = val.GetUint();
+
+		return true;
+	}
+		
+	void configureLedProtocol(const USBDevice::Value& protocol_config, bool verbose)
+	{
+		int vca_ret = 0;
+		unsigned int val = 0;
+		bool custom = false;
+
+		if (!protocol_config.IsObject())
+		{
+			if (verbose)
+				std::clog << "Expected 'protocol' property in config file to be an object.\n";
+			return;
+		}
+
+		vca_led_protocol_settings_t protocol_settings;
+		const USBDevice::Value& base = protocol_config["base"];
+		if (!base.IsNull())
+		{
+			if (!base.IsString())
+			{
+				if (verbose)
+					std::clog << "Expected 'protocol.base' property in config file to be aa string.\n";
+				return;
+			}
+
+			vca_ret = vca_set_led_protocol_from_preset_name((unsigned char*)(base.GetString()));
+			if (vca_ret != VCA_SUCCESS)
+			{
+				if (verbose)
+					std::clog << "Failed to get the current LED protocol settings.\n";
+				return;
+			}
+		}
+
+		vca_ret = vca_get_led_protocol(&protocol_settings, sizeof(vca_led_protocol_settings_t));
+		if (vca_ret != VCA_SUCCESS)
+		{
+			if (verbose)
+				std::clog << "Failed to get the current LED protocol settings.\n";
+			return;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "max_leds", verbose, val))
+		{
+			protocol_settings.max_leds = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "protocol_type", verbose, val))
+		{
+			protocol_settings.protocol_type = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "data_size", verbose, val))
+		{
+			protocol_settings.data_size = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "bit_rate_khz", verbose, val))
+		{
+			protocol_settings.bit_rate_khz = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "waveform_algorithm", verbose, val))
+		{
+			protocol_settings.waveform_algorithm = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "colour_order", verbose, val))
+		{
+			protocol_settings.colour_order = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "init_marker_type", verbose, val))
+		{
+			protocol_settings.init_marker_type = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "init_marker_size", verbose, val))
+		{
+			protocol_settings.init_marker_size = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "termination_marker_type", verbose, val))
+		{
+			protocol_settings.termination_marker_type = val;
+			custom = true;
+		}
+
+		if (tryGetUnsignedValue(protocol_config, "termination_marker_size", verbose, val))
+		{
+			protocol_settings.termination_marker_size = val;
+			custom = true;
+		}
+
+		if (custom)
+		{
+			vca_ret = vca_set_led_protocol(&protocol_settings);
+			if (vca_ret != VCA_SUCCESS)
+			{
+				if (verbose)
+					std::clog << "Failed to set the custom LED protocol settings.\n" << vca_last_os_error_string() << "\n";
+				return;
+			}
+		}
+
+		if (verbose)
+			std::clog << "Successfully configured the LED protocol settings.\n";
 	}
 }
 
@@ -269,6 +405,12 @@ bool AIDevice::matchConfiguration(const Value &config)
 
 void AIDevice::loadConfiguration(const Value &config)
 {
+	const Value &protocol = config["led_protocol"];
+	if (!protocol.IsNull())
+	{
+		configureLedProtocol(protocol, mVerbose);
+	}
+
     /*
      *	Channel mapping stuff:
      *   [ OPC Channel, First OPC Pixel, First output pixel, Pixel count ]

@@ -15,7 +15,10 @@
         },
         {
             "type": "Advantech Innocore LED Controller",
-            "map": [[ 0, 0, 0, 4096 ]]
+            "map": [[ 0, 0, 0, 4096 ]],
+			"led_protocol": {
+				"base": "WS2812B"
+			}
         }
     ]
 }
