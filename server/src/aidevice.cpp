@@ -224,7 +224,7 @@ done:
 				return;
 			}
 
-			vca_ret = vca_set_led_protocol_from_preset_name((unsigned char*)(base.GetString()));
+			vca_ret = vca_set_led_protocol_from_preset_name((char*)(base.GetString()));
 			if (vca_ret != VCA_SUCCESS)
 			{
 				if (verbose)
@@ -558,11 +558,11 @@ void AIDevice::writeColorCorrection(const Value &color)
 	if (!color.IsNull())
 	{
 		if (mVerbose)
-			std::clog << "Setting simple colour correction on the LED Controller.\n";
-		int ret = vca_enable_simple_colour_correction();
+			std::clog << "Setting simple gamma correction on the LED Controller.\n";
+		int ret = vca_enable_simple_gamma_correction();
 		if (mVerbose && VCA_SUCCESS != ret)
 		{
-			std::clog << "Failed to set simple colour correction on the LED Controller (" << ret << ").\n";
+			std::clog << "Failed to set simple gamma correction on the LED Controller (" << ret << ").\n";
 		}
 	}
 }
