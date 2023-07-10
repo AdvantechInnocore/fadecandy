@@ -433,15 +433,15 @@ void AIDevice::loadConfiguration(const Value &config)
 			const Value& vFirstOPC = inst[1];
 			const Value& vFirstOut = inst[2];
 			const Value& vCount = inst[3];
-			if (!vChannel.IsUint() || !vFirstOPC.IsUint() || !vFirstOut.IsUint() || !vCount.IsUint())
+			if (!vChannel.IsUint() || !vFirstOPC.IsUint() || !vFirstOut.IsUint() || !vCount.IsInt())
 			{
 				std::clog << "LED mapping entry " << i << " has invalid values.  It will not be possible to set any LED colours.\n";
 				return;
 			}
-            uint32_t channel = vChannel.GetUint();
-            uint32_t firstOPC = vFirstOPC.GetUint();
-            uint32_t firstOut = vFirstOut.GetUint();
-            uint32_t count = vCount.GetUint();
+			uint32_t channel = vChannel.GetUint();
+			uint32_t firstOPC = vFirstOPC.GetUint();
+			uint32_t firstOut = vFirstOut.GetUint();
+			int32_t count = vCount.GetInt();
 
 			if (channel != 0)
 			{
@@ -455,24 +455,35 @@ void AIDevice::loadConfiguration(const Value &config)
 				return;
 			}
 
-			uint32_t output_channel = firstOut / VCA_MAX_LEDS_PER_CHANNEL;
+			int32_t output_channel = firstOut / VCA_MAX_LEDS_PER_CHANNEL;
+			vcaS8 inc = 1;
+			if (count < 0)
+			{
+				count = -count;
+				inc = -1;
+			}
 			firstOut %= VCA_MAX_LEDS_PER_CHANNEL;
 			while (count > 0)
 			{
-				uint32_t channel_count = ((firstOut + count) > VCA_MAX_LEDS_PER_CHANNEL ? VCA_MAX_LEDS_PER_CHANNEL - firstOut : count);
+				int32_t channel_count = count;
+				int32_t lastOut = (firstOut + ((count - 1) * inc));
+				if (lastOut >= VCA_MAX_LEDS_PER_CHANNEL)
+					channel_count = VCA_MAX_LEDS_PER_CHANNEL - firstOut;
+				else if (lastOut < 0)
+					channel_count += lastOut;
 
-				vca_led_mapping_t entry = {(vcaU16)firstOPC, (vcaU16)channel_count, (vcaU8)output_channel, 0, (vcaU8)firstOut, 1};
+				vca_led_mapping_t entry = {(vcaU16)firstOPC, (vcaU16)channel_count, (vcaU8)output_channel, 0, (vcaU8)firstOut, inc};
 				mapping.push_back(entry);
 
 				count -= channel_count;
-				++output_channel;
-				firstOut = 0;
+				output_channel += inc;
+				firstOut = (inc == 1 ? 0 : 255);
 				firstOPC += channel_count;
 				total_leds += channel_count;
 
-				if (count != 0 && output_channel >= VCA_NUM_LED_CHANNELS)
+				if (count != 0 && (output_channel >= VCA_NUM_LED_CHANNELS || output_channel < 0))
 				{
-					std::clog << "LED mapping entry " << i << " exceeds past the number of supported LED Controller channels (" << VCA_NUM_LED_CHANNELS << ").  It will not be possible to set any LED colours.\n";
+					std::clog << "LED mapping entry " << i << " extends outside the valid range of LED Controller channels (0 to " << VCA_NUM_LED_CHANNELS << ").  It will not be possible to set any LED colours.\n";
 					return;
 				}
 			}
