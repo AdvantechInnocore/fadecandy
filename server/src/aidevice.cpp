@@ -174,7 +174,7 @@ done:
 		for (int p = 1; p < 256; ++p)
 		{
 			sprintf(com_port, "COM%d", p);
-			if (tryConnectToPort(com_port, verbose))
+			if (tryConnectToPort(com_port, false))
 				return;
 		}
 
