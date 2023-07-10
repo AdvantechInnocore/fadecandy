@@ -12,6 +12,8 @@
 #define IGL_GET_VERSION_BUILD(ver)	 (((ver) & 0x00000fff))
 
 #define COLOURS_PER_LED 3
+#define ADVANTECH_VENDOR_ID 0x1809
+#define LED_CONTROLLER_PRODUCT_ID 0x0203
 
 namespace
 {
@@ -356,9 +358,9 @@ bool AIDevice::probe(libusb_device *device, const Value& config, bool verbose)
 		return false; // Can't access descriptor?
 	}
 
-	if (dd.bDeviceClass != LIBUSB_CLASS_COMM)
+	if (dd.idVendor != ADVANTECH_VENDOR_ID || dd.idProduct != LED_CONTROLLER_PRODUCT_ID || dd.bDeviceClass != LIBUSB_CLASS_COMM)
 	{
-		return false; // Not a COM port device, ie not an Advantech Innocore LED Controller
+		return false; // Not an Advantech Innocore LED Controller, or for some strange reason, not a virtual COM port.
 	}
 
 	char *connected_port = nullptr;
